@@ -1,0 +1,291 @@
+# Sistema de Control de Estacionamiento
+
+Sistema web completo para la gestión de estacionamiento con control de ingreso/egreso de vehículos, generación de códigos QR, cálculo automático de tarifas y gestión de clientes mensuales.
+
+## 🚀 Características
+
+- ✅ **Registro de ingreso** con patente y tipo de vehículo
+- ✅ **Generación automática de código QR** único por vehículo
+- ✅ **Escaneo de QR** para procesar salidas
+- ✅ **Cálculo automático de tarifas** (por hora, fraccionado cada media hora)
+- ✅ **Generación de tickets/comprobantes** imprimibles
+- ✅ **Gestión de clientes mensuales** (patente, modelo, teléfono, vencimiento)
+- ✅ **Diferenciación de tarifas** entre autos y motos
+- ✅ **Sistema multi-usuario** (4 operadores de garita)
+- ✅ **Interfaz web responsive** (funciona en PC y móvil)
+- ✅ **Panel de estado** en tiempo real
+- ✅ **Reportes diarios** con estadísticas
+
+## 📋 Tarifas
+
+### Autos 🚗
+- Primera hora: $500
+- Cada media hora adicional: $250
+
+### Motos 🏍️
+- Primera hora: $300
+- Cada media hora adicional: $150
+
+### Clientes Mensuales
+- Sin cargo (ingreso libre hasta la fecha de vencimiento)
+
+## 🛠️ Instalación
+
+### Prerrequisitos
+- Python 3.8 o superior
+- pip (gestor de paquetes de Python)
+
+### Paso 1: Clonar el repositorio
+```bash
+git clone https://github.com/DiegoRafaelRamosLlanos/Estacionamiento.git
+cd Estacionamiento
+```
+
+### Paso 2: Crear entorno virtual
+```bash
+# En Windows
+python -m venv venv
+venv\Scripts\activate
+
+# En Linux/Mac
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### Paso 3: Instalar dependencias
+```bash
+pip install -r requirements.txt
+```
+
+### Paso 4: Inicializar la base de datos
+```bash
+python init_db.py
+```
+
+Este comando creará:
+- La base de datos SQLite (`app.db`)
+- 4 usuarios operadores
+- 2 clientes mensuales de ejemplo
+
+### Paso 5: Ejecutar la aplicación
+```bash
+python run.py
+```
+
+La aplicación estará disponible en: `http://127.0.0.1:5000`
+
+## 👥 Usuarios de Prueba
+
+| Usuario | Contraseña | Nombre |
+|---------|------------|---------|
+| operador1 | 1234 | Juan Pérez |
+| operador2 | 1234 | María García |
+| operador3 | 1234 | Carlos López |
+| operador4 | 1234 | Ana Martínez |
+
+## 📱 Uso del Sistema
+
+### 1. Ingreso de Vehículos
+1. Iniciar sesión con credenciales de operador
+2. Ir a **"Ingreso"** en el menú
+3. Ingresar patente y seleccionar tipo de vehículo
+4. Hacer clic en **"Registrar Ingreso"**
+5. Se generará un código QR único
+6. Imprimir o mostrar el QR al cliente
+
+### 2. Salida de Vehículos
+1. Ir a **"Salida"** en el menú
+2. Escanear el código QR o ingresar ID/patente manualmente
+3. El sistema calculará automáticamente el costo
+4. Se generará un ticket con todos los datos
+5. Imprimir el ticket como comprobante
+
+### 3. Gestión de Clientes Mensuales
+1. Ir a **"Mensuales"** en el menú
+2. Completar el formulario con los datos del cliente:
+   - Patente
+   - Modelo del vehículo
+   - Teléfono
+   - Tipo de vehículo
+   - Fecha de vencimiento
+3. Los clientes mensuales ingresan sin cargo
+
+### 4. Monitoreo en Tiempo Real
+1. Ir a **"Estado"** para ver vehículos activos
+2. Se muestra tiempo transcurrido y costo estimado
+3. La página se actualiza automáticamente cada 30 segundos
+
+### 5. Reportes
+1. Ir a **"Reportes"** para ver estadísticas del día:
+   - Total de vehículos
+   - Recaudación total
+   - Vehículos activos
+   - Historial completo
+
+## 🗂️ Estructura del Proyecto
+
+```
+Estacionamiento/
+├── app/
+│   ├── __init__.py           # Inicialización de la app Flask
+│   ├── auth.py               # Rutas de autenticación
+│   ├── routes.py             # Rutas principales
+│   ├── models/
+│   │   └── models.py         # Modelos de base de datos
+│   ├── templates/            # Plantillas HTML
+│   │   ├── base.html
+│   │   ├── index.html
+│   │   ├── entry.html
+│   │   ├── exit.html
+│   │   ├── monthly.html
+│   │   ├── status.html
+│   │   ├── reports.html
+│   │   └── auth/
+│   │       └── login.html
+│   └── static/               # Archivos estáticos (CSS, JS, imágenes)
+├── config.py                 # Configuración de la aplicación
+├── requirements.txt          # Dependencias del proyecto
+├── init_db.py               # Script de inicialización de BD
+├── run.py                   # Punto de entrada de la aplicación
+└── README.md                # Este archivo
+```
+
+## 🔧 Configuración Avanzada
+
+### Variables de Entorno
+Crear un archivo `.env` en la raíz del proyecto:
+
+```env
+SECRET_KEY=tu-clave-secreta-aqui
+DATABASE_URL=sqlite:///app.db
+FLASK_ENV=development
+```
+
+### Cambiar Tarifas
+Editar en `app/routes.py`, función `vehicle_exit()`:
+
+```python
+if vehicle.type == 'auto':
+    first_hour_rate = 500  # Cambiar aquí
+    half_hour_rate = 250   # Cambiar aquí
+else:  # moto
+    first_hour_rate = 300  # Cambiar aquí
+    half_hour_rate = 150   # Cambiar aquí
+```
+
+### Base de Datos MySQL (Producción)
+Para usar MySQL en lugar de SQLite:
+
+1. Instalar PyMySQL:
+```bash
+pip install PyMySQL
+```
+
+2. Configurar en `.env`:
+```env
+DATABASE_URL=mysql+pymysql://usuario:contraseña@localhost/estacionamiento
+```
+
+## 📊 Modelos de Datos
+
+### User (Usuario)
+- `id`: ID único
+- `username`: Nombre de usuario
+- `password_hash`: Contraseña encriptada
+- `name`: Nombre completo
+
+### Vehicle (Vehículo)
+- `id`: ID único
+- `plate`: Patente
+- `type`: Tipo (auto/moto)
+- `entry_time`: Hora de ingreso
+- `exit_time`: Hora de salida
+- `qr_code`: Código QR (base64)
+- `is_monthly`: ¿Es cliente mensual?
+- `total_cost`: Costo total
+- `operator_name`: Operador que registró ingreso
+- `exit_operator_name`: Operador que registró salida
+
+### MonthlyClient (Cliente Mensual)
+- `id`: ID único
+- `plate`: Patente
+- `model`: Modelo del vehículo
+- `phone`: Teléfono
+- `vehicle_type`: Tipo (auto/moto)
+- `expiration_date`: Fecha de vencimiento
+- `created_at`: Fecha de registro
+
+## 🐛 Solución de Problemas
+
+### Error: "No module named 'flask'"
+```bash
+pip install -r requirements.txt
+```
+
+### Error: "Database not found"
+```bash
+python init_db.py
+```
+
+### Error: "Port already in use"
+Cambiar el puerto en `run.py`:
+```python
+app.run(debug=True, port=5001)
+```
+
+### Resetear la base de datos
+```bash
+rm app.db
+python init_db.py
+```
+
+## 📝 Notas Importantes
+
+- Los códigos QR se almacenan en formato base64 en la base de datos
+- La aplicación funciona sin conexión a internet (excepto para cargar Bootstrap y jQuery desde CDN)
+- Se recomienda hacer backups periódicos de `app.db`
+- Para producción, cambiar `SECRET_KEY` y desactivar modo debug
+
+## 🚀 Despliegue en Producción
+
+### Usando Gunicorn
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:8000 "app:create_app()"
+```
+
+### Usando Docker (opcional)
+Crear `Dockerfile`:
+```dockerfile
+FROM python:3.9
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "app:create_app()"]
+```
+
+## 📄 Licencia
+
+Este proyecto es de código abierto y está disponible para uso libre.
+
+## 👨‍💻 Autor
+
+Diego Rafael Ramos Llanos
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📞 Soporte
+
+Para reportar problemas o sugerencias, abrir un issue en GitHub.
+
+---
+
+**¡Gracias por usar el Sistema de Control de Estacionamiento!** 🚗🏍️

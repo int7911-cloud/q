@@ -1,0 +1,230 @@
+{% extends "base.html" %} {% block content %}
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">
+          <i class="bi bi-box-arrow-in-right"></i> Ingreso de Vehículos
+        </h4>
+      </div>
+      <div class="card-body p-4">
+        <form id="entryForm">
+          <div class="mb-3">
+            <label for="plate" class="form-label fw-semibold">Patente</label>
+            <input
+              type="text"
+              class="form-control form-control-lg"
+              id="plate"
+              name="plate"
+              placeholder="ABC123"
+              required
+              style="text-transform: uppercase"
+            />
+            <small class="text-muted">Ingrese la patente sin espacios</small>
+          </div>
+
+          <div class="mb-4">
+            <label for="type" class="form-label fw-semibold"
+              >Tipo de Vehículo</label
+            >
+            <select
+              class="form-select form-select-lg"
+              id="type"
+              name="type"
+              required
+            >
+              <option value="auto">
+                🚗 Auto - $500 primera hora, $250 c/media hora
+              </option>
+              <option value="moto">
+                🏍️ Moto - $300 primera hora, $150 c/media hora
+              </option>
+            </select>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+              <i class="bi bi-plus-circle"></i> Registrar Ingreso
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+      <i class="bi bi-info-circle"></i> <strong>Nota:</strong> Al registrar el
+      ingreso se generará un código QR único para el vehículo.
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación con QR -->
+<div
+  class="modal fade"
+  id="qrModal"
+  tabindex="-1"
+  aria-labelledby="qrModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="qrModalLabel">
+          <i class="bi bi-check-circle"></i> Vehículo Registrado
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <div id="qrCodeContainer" class="mb-3"></div>
+        <div id="vehicleInfo"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="printQR()">
+          <i class="bi bi-printer"></i> Imprimir
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Error -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle"></i> Error
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p id="errorMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("entryForm");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      console.log("Formulario enviado");
+
+      // Deshabilitar botón
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+
+      // Obtener datos del formulario
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("/vehicle/entry", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Mostrar QR y datos
+          const qrImg = `<img src="data:image/png;base64,${data.qr_code}" class="img-fluid" style="max-width: 300px;">`;
+          document.getElementById("qrCodeContainer").innerHTML = qrImg;
+
+          const info = `
+                    <div class="alert alert-success">
+                        <h5><strong>Patente:</strong> ${data.plate}</h5>
+                        <p><strong>ID:</strong> ${data.vehicle_id}</p>
+                        <p><strong>Hora de Ingreso:</strong> ${
+                          data.entry_time
+                        }</p>
+                        ${
+                          data.is_monthly
+                            ? '<p class="text-primary fw-bold">✓ Cliente Mensual</p>'
+                            : ""
+                        }
+                    </div>
+                `;
+          document.getElementById("vehicleInfo").innerHTML = info;
+
+          // Mostrar modal
+          const qrModal = new bootstrap.Modal(
+            document.getElementById("qrModal")
+          );
+          qrModal.show();
+
+          // Limpiar formulario
+          form.reset();
+        } else {
+          // Mostrar error
+          document.getElementById("errorMessage").textContent =
+            data.message || "Error al registrar el vehículo";
+          const errorModal = new bootstrap.Modal(
+            document.getElementById("errorModal")
+          );
+          errorModal.show();
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("errorMessage").textContent =
+          "Error de conexión: " + error.message;
+        const errorModal = new bootstrap.Modal(
+          document.getElementById("errorModal")
+        );
+        errorModal.show();
+      } finally {
+        // Rehabilitar botón
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+          '<i class="bi bi-plus-circle"></i> Registrar Ingreso';
+      }
+    });
+  });
+
+  function printQR() {
+    const content =
+      document.getElementById("qrCodeContainer").innerHTML +
+      document.getElementById("vehicleInfo").innerHTML;
+    const printWindow = window.open("", "", "width=600,height=600");
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Código QR - Estacionamiento</title>
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+                    img { max-width: 300px; }
+                </style>
+            </head>
+            <body>
+                ${content}
+                <script>window.print(); window.close();<\/script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %} {% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h2 class="text-white mb-4">
+      <i class="bi bi-graph-up"></i> Reportes del Día
+    </h2>
+  </div>
+
+  <!-- Tarjetas de Estadísticas -->
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <i class="bi bi-car-front text-primary" style="font-size: 3rem"></i>
+        <h3 class="mt-3 mb-0">{{ total_vehicles }}</h3>
+        <p class="text-muted">Total de Vehículos</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <i
+          class="bi bi-currency-dollar text-success"
+          style="font-size: 3rem"
+        ></i>
+        <h3 class="mt-3 mb-0">${{ total_earnings }}</h3>
+        <p class="text-muted">Recaudación Total</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <i class="bi bi-clock text-warning" style="font-size: 3rem"></i>
+        <h3 class="mt-3 mb-0">{{ active_vehicles }}</h3>
+        <p class="text-muted">Vehículos Activos</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla de Vehículos del Día -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="bi bi-list-check"></i> Historial del Día</h4>
+      </div>
+      <div class="card-body">
+        {% if vehicles %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Patente</th>
+                <th>Tipo</th>
+                <th>Ingreso</th>
+                <th>Salida</th>
+                <th>Tiempo</th>
+                <th>Costo</th>
+                <th>Estado</th>
+                <th>Operador</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for vehicle in vehicles %}
+              <tr>
+                <td><small>{{ vehicle.id }}</small></td>
+                <td><strong>{{ vehicle.plate }}</strong></td>
+                <td>
+                  {% if vehicle.type == 'auto' %} 🚗 Auto {% else %} 🏍️ Moto {%
+                  endif %}
+                </td>
+                <td>{{ vehicle.entry_time.strftime('%H:%M') }}</td>
+                <td>
+                  {% if vehicle.exit_time %} {{
+                  vehicle.exit_time.strftime('%H:%M') }} {% else %}
+                  <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if vehicle.exit_time %} {% set elapsed = (vehicle.exit_time
+                  - vehicle.entry_time).total_seconds() %} {% set hours =
+                  (elapsed // 3600)|int %} {% set minutes = ((elapsed % 3600) //
+                  60)|int %} {{ hours }}h {{ minutes }}m {% else %}
+                  <span class="text-warning">En curso...</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if vehicle.is_monthly %}
+                  <span class="badge bg-success">Mensual</span>
+                  {% elif vehicle.total_cost %}
+                  <strong>${{ vehicle.total_cost }}</strong>
+                  {% else %}
+                  <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if vehicle.exit_time %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> Finalizado
+                  </span>
+                  {% else %}
+                  <span class="badge bg-primary">
+                    <i class="bi bi-clock"></i> Activo
+                  </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <small>{{ vehicle.operator_name }}</small>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-inbox" style="font-size: 3rem"></i>
+          <p class="mt-3">No hay registros para el día de hoy</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver al Inicio
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+      <i class="bi bi-printer"></i> Imprimir Reporte
+    </button>
+  </div>
+</div>
+{% endblock %}

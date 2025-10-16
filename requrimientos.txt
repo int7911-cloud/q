@@ -1,0 +1,20 @@
+Resumen de Requerimientos:
+Funcionalidades principales:
+
+Registro de ingreso: patente y hora
+Generación de QR al ingresar
+Escaneo de QR al salir
+Cálculo automático de tarifa (por hora, fraccionado cada media hora)
+Generación de ticket/comprobante
+Gestión de clientes mensuales (patente, modelo, teléfono, vencimiento)
+Diferenciación entre autos y motos
+Sistema multi-usuario (4 usuarios de garita)
+Aplicación web (funciona en PC y móvil)
+
+una aplicación web completa con:
+
+Panel de ingreso de vehículos
+Scanner de QR para salidas
+Gestión de clientes mensuales
+Sistema de usuarios
+Generación de tickets

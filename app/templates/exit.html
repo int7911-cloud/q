@@ -1,0 +1,430 @@
+{% extends "base.html" %} {% block content %}
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="card">
+      <div class="card-header bg-success text-white">
+        <h4 class="mb-0">
+          <i class="bi bi-box-arrow-left"></i> Salida de Vehículos
+        </h4>
+      </div>
+      <div class="card-body p-4">
+        <form id="exitForm">
+          <div class="mb-3">
+            <label for="searchInput" class="form-label fw-semibold"
+              >Buscar por ID o Patente</label
+            >
+            <div class="input-group input-group-lg">
+              <input
+                type="text"
+                class="form-control"
+                id="searchInput"
+                placeholder="Ingrese ID, escanee QR o use lector físico"
+                required
+                style="text-transform: uppercase"
+                autofocus
+              />
+              <button
+                class="btn btn-outline-primary"
+                type="button"
+                id="scanButton"
+              >
+                <i class="bi bi-camera"></i> Escanear
+              </button>
+            </div>
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i>
+              Opciones: escribir manualmente, escanear con cámara, o usar lector
+              físico de QR
+            </small>
+          </div>
+
+          <!-- Contenedor para el escáner de cámara -->
+          <div id="qr-reader" style="display: none" class="mb-3">
+            <div class="card border-primary">
+              <div class="card-body">
+                <div
+                  class="d-flex justify-content-between align-items-center mb-2"
+                >
+                  <h6 class="mb-0">
+                    <i class="bi bi-camera-video"></i> Escáner de QR
+                  </h6>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-danger"
+                    id="stopScanButton"
+                  >
+                    <i class="bi bi-x-circle"></i> Cerrar Cámara
+                  </button>
+                </div>
+                <div id="qr-reader-container"></div>
+                <div id="qr-reader-results" class="mt-2"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+              <i class="bi bi-check-circle"></i> Procesar Salida
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+      <i class="bi bi-info-circle"></i>
+      <strong>3 Formas de procesar salida:</strong>
+      <ul class="mb-0 mt-2">
+        <li><strong>Método 1:</strong> Escribir manualmente el ID o patente</li>
+        <li>
+          <strong>Método 2:</strong> Hacer clic en "Escanear" para usar la
+          cámara del dispositivo
+        </li>
+        <li>
+          <strong>Método 3:</strong> Usar un lector físico de códigos QR (se
+          captura automáticamente)
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Ticket -->
+<div
+  class="modal fade"
+  id="ticketModal"
+  tabindex="-1"
+  aria-labelledby="ticketModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="ticketModalLabel">
+          <i class="bi bi-receipt"></i> Ticket de Salida
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body" id="ticketContent"></div>
+      <div class="modal-footer no-print">
+        <button type="button" class="btn btn-primary" onclick="printTicket()">
+          <i class="bi bi-printer"></i> Imprimir Ticket
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Error -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle"></i> Error
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p id="errorMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<!-- Librería para escaneo de QR con cámara -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+  let html5QrCode = null;
+  let isScanning = false;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("exitForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const searchInput = document.getElementById("searchInput");
+    const scanButton = document.getElementById("scanButton");
+    const stopScanButton = document.getElementById("stopScanButton");
+    const qrReaderDiv = document.getElementById("qr-reader");
+
+    // ============================================
+    // OPCIÓN 3: LECTOR FÍSICO DE QR
+    // ============================================
+    // El input captura automáticamente cuando se escanea con lector físico
+    // Los lectores físicos actúan como teclado y envían Enter al final
+    let scanBuffer = "";
+    let scanTimeout = null;
+
+    searchInput.addEventListener("keypress", function (e) {
+      // Si presiona Enter y hay contenido, procesar
+      if (e.key === "Enter" && searchInput.value.trim()) {
+        e.preventDefault();
+        form.dispatchEvent(new Event("submit"));
+      }
+    });
+
+    // Detectar escaneo rápido (lector físico)
+    searchInput.addEventListener("input", function (e) {
+      clearTimeout(scanTimeout);
+
+      // Si el input se llena muy rápido, probablemente es un escáner
+      scanTimeout = setTimeout(() => {
+        if (searchInput.value.length > 3) {
+          console.log("Escaneo detectado por lector físico");
+        }
+      }, 100);
+    });
+
+    // ============================================
+    // OPCIÓN 1: ESCANEO CON CÁMARA
+    // ============================================
+    scanButton.addEventListener("click", function () {
+      if (!isScanning) {
+        startQrScanner();
+      }
+    });
+
+    stopScanButton.addEventListener("click", function () {
+      stopQrScanner();
+    });
+
+    function startQrScanner() {
+      qrReaderDiv.style.display = "block";
+      scanButton.disabled = true;
+      isScanning = true;
+
+      html5QrCode = new Html5Qrcode("qr-reader-container");
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+      };
+
+      html5QrCode
+        .start(
+          { facingMode: "environment" }, // Cámara trasera en móviles
+          config,
+          (decodedText, decodedResult) => {
+            // QR escaneado exitosamente
+            console.log("QR escaneado:", decodedText);
+            searchInput.value = decodedText;
+
+            // Mostrar mensaje de éxito
+            document.getElementById("qr-reader-results").innerHTML =
+              '<div class="alert alert-success mb-0"><i class="bi bi-check-circle"></i> Código escaneado correctamente</div>';
+
+            // Detener escáner después de 1 segundo
+            setTimeout(() => {
+              stopQrScanner();
+            }, 1000);
+          },
+          (errorMessage) => {
+            // Error al escanear (normal mientras busca el QR)
+            // No mostramos estos errores para no saturar
+          }
+        )
+        .catch((err) => {
+          console.error("Error al iniciar cámara:", err);
+          alert("No se pudo acceder a la cámara. Verifique los permisos.");
+          stopQrScanner();
+        });
+    }
+
+    function stopQrScanner() {
+      if (html5QrCode) {
+        html5QrCode
+          .stop()
+          .then(() => {
+            html5QrCode.clear();
+            qrReaderDiv.style.display = "none";
+            scanButton.disabled = false;
+            isScanning = false;
+            document.getElementById("qr-reader-results").innerHTML = "";
+          })
+          .catch((err) => {
+            console.error("Error al detener escáner:", err);
+          });
+      }
+    }
+
+    // ============================================
+    // PROCESAR SALIDA
+    // ============================================
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const searchValue = searchInput.value.trim();
+
+      if (!searchValue) {
+        alert("Por favor ingrese un ID o patente");
+        return;
+      }
+
+      // Detener escáner si está activo
+      if (isScanning) {
+        stopQrScanner();
+      }
+
+      // Deshabilitar botón
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+
+      // Determinar si es ID o patente
+      const formData = new FormData();
+      if (isNaN(searchValue)) {
+        formData.append("plate", searchValue);
+      } else {
+        formData.append("vehicle_id", searchValue);
+      }
+
+      try {
+        const response = await fetch("/vehicle/exit", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          generateTicket(data.vehicle);
+          const ticketModal = new bootstrap.Modal(
+            document.getElementById("ticketModal")
+          );
+          ticketModal.show();
+          form.reset();
+          searchInput.focus();
+        } else {
+          document.getElementById("errorMessage").textContent =
+            data.message || "Error al procesar la salida";
+          const errorModal = new bootstrap.Modal(
+            document.getElementById("errorModal")
+          );
+          errorModal.show();
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("errorMessage").textContent =
+          "Error de conexión: " + error.message;
+        const errorModal = new bootstrap.Modal(
+          document.getElementById("errorModal")
+        );
+        errorModal.show();
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+          '<i class="bi bi-check-circle"></i> Procesar Salida';
+      }
+    });
+  });
+
+  function generateTicket(vehicle) {
+    const entryDate = new Date(vehicle.entry_time);
+    const exitDate = new Date(vehicle.exit_time);
+
+    const ticketHTML = `
+        <div class="ticket-container p-4">
+            <div class="text-center border-bottom pb-3 mb-3">
+                <h3 class="fw-bold">TICKET DE ESTACIONAMIENTO</h3>
+                <p class="text-muted">Comprobante de Salida</p>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Fecha:</strong></div>
+                <div class="col-6 text-end">${exitDate.toLocaleDateString(
+                  "es-AR"
+                )}</div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Patente:</strong></div>
+                <div class="col-6 text-end"><span class="badge bg-dark">${
+                  vehicle.plate
+                }</span></div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Tipo:</strong></div>
+                <div class="col-6 text-end">${
+                  vehicle.type === "auto" ? "🚗 Auto" : "🏍️ Moto"
+                }</div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Hora Ingreso:</strong></div>
+                <div class="col-6 text-end">${entryDate.toLocaleTimeString(
+                  "es-AR"
+                )}</div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Hora Salida:</strong></div>
+                <div class="col-6 text-end">${exitDate.toLocaleTimeString(
+                  "es-AR"
+                )}</div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Tiempo Total:</strong></div>
+                <div class="col-6 text-end">${vehicle.hours} horas</div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-6"><strong>Operador Ingreso:</strong></div>
+                <div class="col-6 text-end"><small>${
+                  vehicle.operator
+                }</small></div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-6"><strong>Operador Salida:</strong></div>
+                <div class="col-6 text-end"><small>${
+                  vehicle.exit_operator
+                }</small></div>
+            </div>
+            
+            <div class="alert ${
+              vehicle.is_monthly ? "alert-success" : "alert-primary"
+            } text-center">
+                ${
+                  vehicle.is_monthly
+                    ? '<h4 class="mb-0"><i class="bi bi-check-circle"></i> Cliente Mensual</h4><p class="mb-0">Sin cargo</p>'
+                    : `<h3 class="mb-0"><strong>TOTAL A PAGAR:</strong></h3><h1 class="fw-bold mb-0">$${vehicle.cost}</h1>`
+                }
+            </div>
+            
+            <div class="text-center text-muted mt-3">
+                <small>ID: ${vehicle.id}</small><br>
+                <small>Gracias por utilizar nuestro servicio</small>
+            </div>
+        </div>
+    `;
+
+    document.getElementById("ticketContent").innerHTML = ticketHTML;
+  }
+
+  function printTicket() {
+    window.print();
+  }
+</script>
+{% endblock %}

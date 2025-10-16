@@ -1,0 +1,131 @@
+{% extends "base.html" %} {% block content %}
+<div class="row mb-4">
+  <div class="col-12 text-center text-white">
+    <h1 class="display-4 fw-bold mb-3">Panel de Control</h1>
+    <p class="lead">Bienvenido, {{ current_user.username }}</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6 col-lg-3">
+    <div class="card text-center h-100">
+      <div class="card-body d-flex flex-column">
+        <i
+          class="bi bi-box-arrow-in-right text-primary"
+          style="font-size: 3rem"
+        ></i>
+        <h5 class="card-title mt-3 mb-3">Ingreso de Vehículos</h5>
+        <p class="card-text text-muted flex-grow-1">
+          Registrar entrada de autos y motos
+        </p>
+        <a
+          href="{{ url_for('main.entry_page') }}"
+          class="btn btn-primary mt-auto"
+        >
+          <i class="bi bi-plus-circle"></i> Registrar Ingreso
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="card text-center h-100">
+      <div class="card-body d-flex flex-column">
+        <i class="bi bi-qr-code-scan text-success" style="font-size: 3rem"></i>
+        <h5 class="card-title mt-3 mb-3">Salida de Vehículos</h5>
+        <p class="card-text text-muted flex-grow-1">
+          Escanear QR y procesar salida
+        </p>
+        <a
+          href="{{ url_for('main.exit_page') }}"
+          class="btn btn-success mt-auto"
+        >
+          <i class="bi bi-box-arrow-left"></i> Procesar Salida
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="card text-center h-100">
+      <div class="card-body d-flex flex-column">
+        <i class="bi bi-credit-card text-warning" style="font-size: 3rem"></i>
+        <h5 class="card-title mt-3 mb-3">Clientes Mensuales</h5>
+        <p class="card-text text-muted flex-grow-1">
+          Gestionar abonos mensuales
+        </p>
+        <a
+          href="{{ url_for('main.monthly_page') }}"
+          class="btn btn-warning mt-auto"
+        >
+          <i class="bi bi-people"></i> Ver Clientes
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="card text-center h-100">
+      <div class="card-body d-flex flex-column">
+        <i class="bi bi-clock-history text-info" style="font-size: 3rem"></i>
+        <h5 class="card-title mt-3 mb-3">Estado Actual</h5>
+        <p class="card-text text-muted flex-grow-1">Ver vehículos activos</p>
+        <a
+          href="{{ url_for('main.status_page') }}"
+          class="btn btn-info mt-auto"
+        >
+          <i class="bi bi-list-ul"></i> Ver Estado
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title mb-3">
+          <i class="bi bi-info-circle text-primary"></i> Información del Sistema
+        </h5>
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="fw-bold">Tarifas:</h6>
+            <ul class="list-unstyled">
+              <li>
+                <i class="bi bi-car-front"></i> <strong>Auto:</strong> $500
+                primera hora, $250 cada media hora
+              </li>
+              <li>
+                <i class="bi bi-scooter"></i> <strong>Moto:</strong> $300
+                primera hora, $150 cada media hora
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold">Funcionalidades:</h6>
+            <ul class="list-unstyled">
+              <li>
+                <i class="bi bi-check-circle text-success"></i> Registro con QR
+                único
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success"></i> Cálculo
+                automático de tarifas
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success"></i> Gestión de
+                clientes mensuales
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success"></i> Generación de
+                tickets
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
